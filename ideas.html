@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ideas - Your Name</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="site-header"></div>
+<script src="header.js"></script>
+
+  <main>
+    <h2>Ideas</h2>
+    <div id="ideas-list"></div>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="footer.js"></script>
+
+  <script src="data.js"></script>
+  <script>
+    // Ideas come from the Ideas sheet (data/ideas.csv): Title, Description.
+    const list = document.getElementById("ideas-list");
+
+    function addMessage(text) {
+      const card = document.createElement("div");
+      card.className = "card";
+      const p = document.createElement("p");
+      p.textContent = text;
+      card.appendChild(p);
+      list.appendChild(card);
+    }
+
+    loadSheet("ideas.csv")
+      .then(function (rows) {
+        const items = rows.filter(function (row) { return row.title; });
+
+        if (items.length === 0) {
+          addMessage("No ideas yet.");
+          return;
+        }
+
+        items.forEach(function (row) {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const h3 = document.createElement("h3");
+          h3.textContent = row.title;
+          card.appendChild(h3);
+
+          if (row.description) {
+            const p = document.createElement("p");
+            p.textContent = row.description;
+            card.appendChild(p);
+          }
+          list.appendChild(card);
+        });
+      })
+      .catch(function () {
+        addMessage("Couldn't load the ideas.");
+      });
+  </script>
+
+</body>
+</html>

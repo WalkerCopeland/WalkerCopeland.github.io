@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Links - Your Name</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="site-header"></div>
+<script src="header.js"></script>
+
+  <main>
+    <h2>Links</h2>
+    <div id="links-list"></div>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="footer.js"></script>
+
+  <script src="data.js"></script>
+  <script>
+    // Links come from the Links sheet (data/links.csv): Name, URL, Description.
+    const list = document.getElementById("links-list");
+
+    function addMessage(text) {
+      const card = document.createElement("div");
+      card.className = "card";
+      const p = document.createElement("p");
+      p.textContent = text;
+      card.appendChild(p);
+      list.appendChild(card);
+    }
+
+    // Accepts https://..., http://..., mailto:..., or a bare address like example.com
+    function fixUrl(u) {
+      if (!u) return null;
+      if (/^(https?:\/\/|mailto:)/i.test(u)) return u;
+      if (/^[\w.-]+\.[a-z]{2,}(\/\S*)?$/i.test(u)) return "https://" + u;
+      return null;
+    }
+
+    loadSheet("links.csv")
+      .then(function (rows) {
+        const items = rows.filter(function (row) { return row.name; });
+
+        if (items.length === 0) {
+          addMessage("No links yet.");
+          return;
+        }
+
+        items.forEach(function (row) {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const h3 = document.createElement("h3");
+          const url = fixUrl(row.url);
+          if (url) {
+            const a = document.createElement("a");
+            a.href = url;
+            a.textContent = row.name;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            h3.appendChild(a);
+          } else {
+            h3.textContent = row.name;
+          }
+          card.appendChild(h3);
+
+          if (row.description) {
+            const p = document.createElement("p");
+            p.textContent = row.description;
+            card.appendChild(p);
+          }
+          list.appendChild(card);
+        });
+      })
+      .catch(function () {
+        addMessage("Couldn't load the links.");
+      });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News - Your Name</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="site-header"></div>
+<script src="header.js"></script>
+
+  <main>
+    <h2>News</h2>
+    <div id="news-list"></div>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="footer.js"></script>
+
+  <script src="data.js"></script>
+  <script>
+    // News comes from the News sheet (data/news.csv).
+    // An item shows until it is one month old, counted from its date.
+    const monthNames = ["January","February","March","April","May","June",
+      "July","August","September","October","November","December"];
+
+    const list = document.getElementById("news-list");
+
+    function addCard(titleText, dateText, bodyText) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      if (titleText) {
+        const h3 = document.createElement("h3");
+        h3.textContent = titleText;
+        card.appendChild(h3);
+      }
+      if (dateText) {
+        const p = document.createElement("p");
+        const em = document.createElement("em");
+        em.textContent = dateText;
+        p.appendChild(em);
+        card.appendChild(p);
+      }
+      if (bodyText) {
+        const p = document.createElement("p");
+        p.textContent = bodyText;
+        card.appendChild(p);
+      }
+      list.appendChild(card);
+    }
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    loadSheet("news.csv")
+      .then(function (rows) {
+        const items = [];
+        rows.forEach(function (row) {
+          const key = toKey(row.date);
+          if (!key || !row.title) return;
+          const d = keyToDate(key);
+          const expires = new Date(d.getFullYear(), d.getMonth() + 1, d.getDate());
+          if (todayStart <= expires) items.push({ d: d, title: row.title, text: row.text });
+        });
+
+        items.sort(function (a, b) { return b.d - a.d; });
+
+        if (items.length === 0) {
+          addCard("", "", "No recent news.");
+          return;
+        }
+        items.forEach(function (item) {
+          const dateText = monthNames[item.d.getMonth()] + " " + item.d.getDate() + ", " + item.d.getFullYear();
+          addCard(item.title, dateText, item.text);
+        });
+      })
+      .catch(function () {
+        addCard("", "", "Couldn't load the news.");
+      });
+  </script>
+
+</body>
+</html>

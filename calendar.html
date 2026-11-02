@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar - Your Name</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="site-header"></div>
+<script src="header.js"></script>
+
+  <main>
+    <h2>Calendar</h2>
+
+    <h3>Upcoming events</h3>
+    <div class="upcoming">
+      <div class="upcoming-col school">
+        <h4>School</h4>
+        <ul id="school-list"></ul>
+      </div>
+      <div class="upcoming-col fun">
+        <h4>Fun</h4>
+        <ul id="fun-list"></ul>
+      </div>
+    </div>
+
+    <div class="calendar-controls">
+      <button id="prev">&laquo; Prev</button>
+      <strong id="month-label"></strong>
+      <button id="next">Next &raquo;</button>
+    </div>
+
+    <table class="calendar">
+      <thead>
+        <tr>
+          <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="footer.js"></script>
+
+  <script src="data.js"></script>
+  <script>
+    // Events come from the School and Fun sheets (data/school.csv and data/fun.csv).
+    // Each date maps to a list of titles: { "2026-11-05": ["Math midterm"] }
+    let schoolEvents = {};
+    let funEvents = {};
+    let loadError = false;
+
+    const monthNames = ["January","February","March","April","May","June",
+      "July","August","September","October","November","December"];
+
+    let today = new Date();
+    let year = today.getFullYear();
+    let month = today.getMonth();
+
+    function addRows(target, rows) {
+      rows.forEach(function (row) {
+        const key = toKey(row.date);
+        const title = row.title;
+        if (!key || !title) return;
+        if (!target[key]) target[key] = [];
+        target[key].push(title);
+      });
+    }
+
+    // Fills one upcoming list with events from today through the next 14 days
+    function renderUpcoming(listId, eventsObj) {
+      const list = document.getElementById(listId);
+      list.innerHTML = "";
+
+      if (loadError) {
+        list.innerHTML = "<li>Couldn't load events.</li>";
+        return;
+      }
+
+      const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const end = new Date(start);
+      end.setDate(end.getDate() + 14);
+
+      const keys = Object.keys(eventsObj).filter(function (k) {
+        const d = keyToDate(k);
+        return d >= start && d <= end;
+      }).sort();
+
+      if (keys.length === 0) {
+        list.innerHTML = "<li>No events in the next two weeks.</li>";
+        return;
+      }
+
+      keys.forEach(function (k) {
+        const d = keyToDate(k);
+        eventsObj[k].forEach(function (title) {
+          const li = document.createElement("li");
+          li.textContent = monthNames[d.getMonth()] + " " + d.getDate() + ": " + title;
+          list.appendChild(li);
+        });
+      });
+    }
+
+    function render() {
+      document.getElementById("month-label").textContent = monthNames[month] + " " + year;
+
+      const body = document.getElementById("calendar-body");
+      body.innerHTML = "";
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      let day = 1;
+      for (let row = 0; row < 6 && day <= daysInMonth; row++) {
+        const tr = document.createElement("tr");
+        for (let col = 0; col < 7; col++) {
+          const td = document.createElement("td");
+          if ((row === 0 && col < firstDay) || day > daysInMonth) {
+            td.className = "empty";
+          } else {
+            const key = year + "-" + pad(month + 1) + "-" + pad(day);
+            const s = schoolEvents[key];
+            const f = funEvents[key];
+            td.textContent = day;
+
+            if (s && f) {
+              td.classList.add("has-both");
+              td.title = "School: " + s.join(", ") + "\nFun: " + f.join(", ");
+            } else if (s) {
+              td.classList.add("has-school");
+              td.title = "School: " + s.join(", ");
+            } else if (f) {
+              td.classList.add("has-fun");
+              td.title = "Fun: " + f.join(", ");
+            }
+
+            if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+              td.classList.add("today");
+            }
+            day++;
+          }
+          tr.appendChild(td);
+        }
+        body.appendChild(tr);
+      }
+    }
+
+    document.getElementById("prev").onclick = function () {
+      month--;
+      if (month < 0) { month = 11; year--; }
+      render();
+    };
+    document.getElementById("next").onclick = function () {
+      month++;
+      if (month > 11) { month = 0; year++; }
+      render();
+    };
+
+    render();
+    Promise.all([loadSheet("school.csv"), loadSheet("fun.csv")])
+      .then(function (results) {
+        addRows(schoolEvents, results[0]);
+        addRows(funEvents, results[1]);
+      })
+      .catch(function () { loadError = true; })
+      .then(function () {
+        renderUpcoming("school-list", schoolEvents);
+        renderUpcoming("fun-list", funEvents);
+        render();
+      });
+  </script>
+
+</body>
+</html>
