@@ -71,13 +71,35 @@
 
     function pad(n) { return String(n).padStart(2, "0"); }
 
-    function addEvents(rows, type) {
-      (rows || []).forEach(function (r) {
-        const key = normalizeDate(r.Date || "");
-        if (!key || !r.Title) return;
-        if (!events[key]) events[key] = [];
-        events[key].push({ title: r.Title, type: type });
+        function addEvents(rows, type) {
+      (rows || []).forEach(function (r, i) {
+        const start = normalizeDate(r.Date || "");
+        if (!start || !r.Title) return;
+        let end = normalizeDate(r["End Date"] || "");
+        if (!end || end < start) end = start;
+
+        const id = type + "-" + i;
+        const p = start.split("-");
+        const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+
+        for (let n = 0; n < 366; n++) {   // safety limit of one year
+          const key = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+          if (key > end) break;
+          if (!events[key]) events[key] = [];
+          events[key].push({ id: id, title: r.Title, type: type, start: start, end: end });
+          d.setDate(d.getDate() + 1);
+        }
       });
+    }
+
+    function fmt(iso) {
+      const p = iso.split("-");
+      return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+        .toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+
+    function rangeText(e) {
+      return e.start === e.end ? fmt(e.start) : fmt(e.start) + " – " + fmt(e.end);
     }
 
     function render() {
@@ -105,7 +127,7 @@
             (events[key] || []).forEach(function (e) {
               const chip = document.createElement("div");
               chip.className = "chip " + e.type;
-              chip.textContent = e.title;
+              chip.textContent = e.title + (key !== e.start ? " (cont.)" : "");
               chip.title = e.title;
               td.appendChild(chip);
             });
@@ -123,17 +145,18 @@
       const list = document.getElementById("event-list");
       list.innerHTML = "";
       const prefix = year + "-" + pad(month + 1);
-      const keys = Object.keys(events).filter(function (k) { return k.startsWith(prefix); }).sort();
-      if (keys.length === 0) {
-        list.innerHTML = "<li>No events this month.</li>";
-      } else {
-        keys.forEach(function (k) {
-          events[k].forEach(function (e) {
-            const li = document.createElement("li");
-            li.textContent = monthNames[month] + " " + parseInt(k.slice(8), 10) + ": " + e.title + " (" + e.type + ")";
-            list.appendChild(li);
-          });
+      const seen = {};
+      Object.keys(events).filter(function (k) { return k.startsWith(prefix); }).sort().forEach(function (k) {
+        events[k].forEach(function (e) {
+          if (seen[e.id]) return;
+          seen[e.id] = true;
+          const li = document.createElement("li");
+          li.textContent = rangeText(e) + ": " + e.title + " (" + e.type + ")";
+          list.appendChild(li);
         });
+      });
+      if (!list.children.length) {
+        list.innerHTML = "<li>No events this month.</li>";
       }
     }
 
@@ -169,7 +192,7 @@
       ["school", "fun"].forEach(function (type) {
         const list = document.getElementById("upcoming-" + type);
         list.innerHTML = "";
-        let count = 0;
+        let count = 0; const seen = {};
 
         Object.keys(events).sort().forEach(function (k) {
           const p = k.split("-");
@@ -177,10 +200,10 @@
           if (d < start || d > end) return;
 
           events[k].forEach(function (e) {
-            if (e.type !== type) return;
+            if (e.type !== type || seen[e.id]) return;
+            seen[e.id] = true;
             const li = document.createElement("li");
-            li.textContent = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + ": " + e.title;
-            list.appendChild(li);
+            li.textContent = rangeText(e) + ": " + e.title;            list.appendChild(li);
             count++;
           });
         });
