@@ -259,3 +259,19 @@ footer {
 .day-num {
   font-weight: bold;
 }
+
+.chip.join-left {
+  margin-left: -11px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.chip.join-right {
+  margin-right: -11px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  text-overflow: clip;
+}

@@ -127,8 +127,11 @@
             (events[key] || []).forEach(function (e) {
               const chip = document.createElement("div");
               chip.className = "chip " + e.type;
-              chip.textContent = e.title + (key !== e.start ? " (cont.)" : "");
+              const showTitle = (key === e.start || col === 0);   // title on the first day and at the start of each week
+              chip.textContent = showTitle ? e.title : "\u00a0";
               chip.title = e.title;
+              if (key !== e.start && col !== 0) chip.classList.add("join-left");
+              if (key !== e.end && col !== 6) chip.classList.add("join-right");
               td.appendChild(chip);
             });
 
