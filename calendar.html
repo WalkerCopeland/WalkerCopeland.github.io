@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calendar & Headlines - Your Name</title>
+  <title>Calendar</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,7 +17,7 @@
   <main>
     <h2>Calendar</h2>
 
-        <h3>Coming up (next 2 weeks)</h3>
+    <h3>Coming up (next 2 weeks)</h3>
     <div class="upcoming">
       <div class="upcoming-col school">
         <h4>School</h4>
@@ -51,9 +51,6 @@
 
     <h3>This month</h3>
     <ul id="event-list"></ul>
-
-    <h2>Headlines</h2>
-    <div id="news-list"></div>
   </main>
 
   <div id="site-footer"></div>
@@ -70,7 +67,7 @@
 
     function pad(n) { return String(n).padStart(2, "0"); }
 
-        function addEvents(rows, type) {
+    function addEvents(rows, type) {
       (rows || []).forEach(function (r, i) {
         const start = normalizeDate(r.Date || "");
         if (!start || !r.Title) return;
@@ -204,31 +201,7 @@
       }
     }
 
-    function renderNews(rows) {
-      const box = document.getElementById("news-list");
-      box.innerHTML = "";
-      if (rows === null) { box.textContent = "Could not load the headlines."; return; }
-      if (rows.length === 0) { box.textContent = "No headlines yet."; return; }
-
-      rows.sort(function (a, b) { return normalizeDate(b.Date).localeCompare(normalizeDate(a.Date)); });
-      rows.forEach(function (r) {
-        const card = document.createElement("div");
-        card.className = "card";
-        const h = document.createElement("h3");
-        h.textContent = r.Title || "";
-        const d = document.createElement("p");
-        const em = document.createElement("em");
-        const iso = normalizeDate(r.Date || "");
-        em.textContent = iso ? prettyDate(iso) : (r.Date || "");
-        d.appendChild(em);
-        const t = document.createElement("p");
-        t.textContent = r.Text || "";
-        card.appendChild(h); card.appendChild(d); card.appendChild(t);
-        box.appendChild(card);
-      });
-    }
-
-        function renderUpcoming() {
+    function renderUpcoming() {
       const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const end = new Date(start);
       end.setDate(end.getDate() + 14);   // change 14 to show more or fewer days
@@ -247,7 +220,8 @@
             if (e.type !== type || seen[e.id]) return;
             seen[e.id] = true;
             const li = document.createElement("li");
-            li.textContent = rangeText(e) + ": " + e.title;            list.appendChild(li);
+            li.textContent = rangeText(e) + ": " + e.title;
+            list.appendChild(li);
             count++;
           });
         });
@@ -267,13 +241,12 @@
       render();
     };
 
-    Promise.all([loadCSV("school"), loadCSV("fun"), loadCSV("news")]).then(function (res) {
+    Promise.all([loadCSV("school"), loadCSV("fun")]).then(function (res) {
       addEvents(res[0], "school");
       addEvents(res[1], "fun");
       assignLanes();
       render();
       renderUpcoming();
-      renderNews(res[2]);
     });
   </script>
 
