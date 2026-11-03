@@ -275,3 +275,7 @@ footer {
   overflow: visible;
   text-overflow: clip;
 }
+
+.chip.spacer {
+  visibility: hidden;
+}

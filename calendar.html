@@ -102,6 +102,35 @@
       return e.start === e.end ? fmt(e.start) : fmt(e.start) + " – " + fmt(e.end);
     }
 
+    const laneOf = {};   // event id -> slot number (0 = top)
+
+    function assignLanes() {
+      const seen = {}, list = [];
+      Object.keys(events).forEach(function (k) {
+        events[k].forEach(function (e) {
+          if (!seen[e.id]) { seen[e.id] = true; list.push(e); }
+        });
+      });
+
+      // Earlier and longer events get the top slots
+      list.sort(function (a, b) {
+        if (a.start !== b.start) return a.start < b.start ? -1 : 1;
+        if (a.end !== b.end) return a.end > b.end ? -1 : 1;
+        return a.id < b.id ? -1 : 1;
+      });
+
+      const used = {};   // day -> slots already taken
+      list.forEach(function (e) {
+        const days = Object.keys(events).filter(function (k) {
+          return events[k].some(function (x) { return x.id === e.id; });
+        });
+        let lane = 0;
+        while (days.some(function (k) { return used[k] && used[k][lane]; })) lane++;
+        days.forEach(function (k) { (used[k] = used[k] || {})[lane] = true; });
+        laneOf[e.id] = lane;
+      });
+    }
+
     function render() {
       document.getElementById("month-label").textContent = monthNames[month] + " " + year;
       const body = document.getElementById("calendar-body");
@@ -124,16 +153,29 @@
             num.textContent = day;
             td.appendChild(num);
 
-            (events[key] || []).forEach(function (e) {
+            const dayEvents = events[key] || [];
+            let maxLane = -1;
+            dayEvents.forEach(function (e) { maxLane = Math.max(maxLane, laneOf[e.id]); });
+
+            for (let lane = 0; lane <= maxLane; lane++) {
+              const e = dayEvents.find(function (x) { return laneOf[x.id] === lane; });
               const chip = document.createElement("div");
+
+              if (!e) {   // empty slot: invisible placeholder keeps the height
+                chip.className = "chip spacer";
+                chip.innerHTML = "&nbsp;";
+                td.appendChild(chip);
+                continue;
+              }
+
               chip.className = "chip " + e.type;
-              const showTitle = (key === e.start || col === 0);   // title on the first day and at the start of each week
+              const showTitle = (key === e.start || col === 0);
               chip.textContent = showTitle ? e.title : "\u00a0";
               chip.title = e.title;
               if (key !== e.start && col !== 0) chip.classList.add("join-left");
               if (key !== e.end && col !== 6) chip.classList.add("join-right");
               td.appendChild(chip);
-            });
+            }
 
             if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
               td.classList.add("today");
@@ -229,6 +271,7 @@
     Promise.all([loadCSV("school"), loadCSV("fun"), loadCSV("news")]).then(function (res) {
       addEvents(res[0], "school");
       addEvents(res[1], "fun");
+      assignLanes();
       render();
       renderUpcoming();
       renderNews(res[2]);
