@@ -9,76 +9,36 @@
 <body>
 
   <div id="site-header"></div>
-<script src="header.js"></script>
+  <script src="header.js"></script>
+  <script src="data.js"></script>
 
   <main>
     <h2>Links</h2>
-    <div id="links-list"></div>
+    <ul id="links-list"></ul>
   </main>
 
-  <div id="site-footer"></div>
-  <script src="footer.js"></script>
+  <footer>
+    <p>&copy; 2026 Your Name</p>
+  </footer>
 
-  <script src="data.js"></script>
   <script>
-    // Links come from the Links sheet (data/links.csv): Name, URL, Description.
-    const list = document.getElementById("links-list");
-
-    function addMessage(text) {
-      const card = document.createElement("div");
-      card.className = "card";
-      const p = document.createElement("p");
-      p.textContent = text;
-      card.appendChild(p);
-      list.appendChild(card);
-    }
-
-    // Accepts https://..., http://..., mailto:..., or a bare address like example.com
-    function fixUrl(u) {
-      if (!u) return null;
-      if (/^(https?:\/\/|mailto:)/i.test(u)) return u;
-      if (/^[\w.-]+\.[a-z]{2,}(\/\S*)?$/i.test(u)) return "https://" + u;
-      return null;
-    }
-
-    loadSheet("links.csv")
-      .then(function (rows) {
-        const items = rows.filter(function (row) { return row.name; });
-
-        if (items.length === 0) {
-          addMessage("No links yet.");
-          return;
-        }
-
-        items.forEach(function (row) {
-          const card = document.createElement("div");
-          card.className = "card";
-
-          const h3 = document.createElement("h3");
-          const url = fixUrl(row.url);
-          if (url) {
-            const a = document.createElement("a");
-            a.href = url;
-            a.textContent = row.name;
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
-            h3.appendChild(a);
-          } else {
-            h3.textContent = row.name;
-          }
-          card.appendChild(h3);
-
-          if (row.description) {
-            const p = document.createElement("p");
-            p.textContent = row.description;
-            card.appendChild(p);
-          }
-          list.appendChild(card);
-        });
-      })
-      .catch(function () {
-        addMessage("Couldn't load the links.");
+    loadCSV("links").then(function (rows) {
+      const list = document.getElementById("links-list");
+      if (rows === null) { list.innerHTML = "<li>Could not load the links.</li>"; return; }
+      if (rows.length === 0) { list.innerHTML = "<li>No links yet.</li>"; return; }
+      rows.forEach(function (r) {
+        if (!/^https?:\/\//i.test(r.URL || "")) return;   // only allow http(s) links
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = r.URL;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = r.Name || r.URL;
+        li.appendChild(a);
+        if (r.Description) li.appendChild(document.createTextNode(" - " + r.Description));
+        list.appendChild(li);
       });
+    });
   </script>
 
 </body>

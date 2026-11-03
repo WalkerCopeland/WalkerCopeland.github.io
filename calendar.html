@@ -3,27 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calendar - Your Name</title>
+  <title>Calendar & Headlines - Your Name</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+  <script src="gate.js"></script>
+
   <div id="site-header"></div>
-<script src="header.js"></script>
+  <script src="header.js"></script>
+  <script src="data.js"></script>
 
   <main>
     <h2>Calendar</h2>
 
-    <h3>Upcoming events</h3>
-    <div class="upcoming">
-      <div class="upcoming-col school">
-        <h4>School</h4>
-        <ul id="school-list"></ul>
-      </div>
-      <div class="upcoming-col fun">
-        <h4>Fun</h4>
-        <ul id="fun-list"></ul>
-      </div>
+    <div class="legend">
+      <span class="chip school">School</span>
+      <span class="chip fun">Fun</span>
     </div>
 
     <div class="calendar-controls">
@@ -40,73 +36,40 @@
       </thead>
       <tbody id="calendar-body"></tbody>
     </table>
+
+    <h3>This month</h3>
+    <ul id="event-list"></ul>
+
+    <h2>Headlines</h2>
+    <div id="news-list"></div>
   </main>
 
-  <div id="site-footer"></div>
-  <script src="footer.js"></script>
+  <footer>
+    <p>&copy; 2026 Your Name</p>
+  </footer>
 
-  <script src="data.js"></script>
   <script>
-    // Events come from the School and Fun sheets (data/school.csv and data/fun.csv).
-    // Each date maps to a list of titles: { "2026-11-05": ["Math midterm"] }
-    let schoolEvents = {};
-    let funEvents = {};
-    let loadError = false;
-
     const monthNames = ["January","February","March","April","May","June",
       "July","August","September","October","November","December"];
 
-    let today = new Date();
+    let events = {};   // "YYYY-MM-DD" -> [{title, type}]
+    const today = new Date();
     let year = today.getFullYear();
     let month = today.getMonth();
 
-    function addRows(target, rows) {
-      rows.forEach(function (row) {
-        const key = toKey(row.date);
-        const title = row.title;
-        if (!key || !title) return;
-        if (!target[key]) target[key] = [];
-        target[key].push(title);
-      });
-    }
+    function pad(n) { return String(n).padStart(2, "0"); }
 
-    // Fills one upcoming list with events from today through the next 14 days
-    function renderUpcoming(listId, eventsObj) {
-      const list = document.getElementById(listId);
-      list.innerHTML = "";
-
-      if (loadError) {
-        list.innerHTML = "<li>Couldn't load events.</li>";
-        return;
-      }
-
-      const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const end = new Date(start);
-      end.setDate(end.getDate() + 14);
-
-      const keys = Object.keys(eventsObj).filter(function (k) {
-        const d = keyToDate(k);
-        return d >= start && d <= end;
-      }).sort();
-
-      if (keys.length === 0) {
-        list.innerHTML = "<li>No events in the next two weeks.</li>";
-        return;
-      }
-
-      keys.forEach(function (k) {
-        const d = keyToDate(k);
-        eventsObj[k].forEach(function (title) {
-          const li = document.createElement("li");
-          li.textContent = monthNames[d.getMonth()] + " " + d.getDate() + ": " + title;
-          list.appendChild(li);
-        });
+    function addEvents(rows, type) {
+      (rows || []).forEach(function (r) {
+        const key = normalizeDate(r.Date || "");
+        if (!key || !r.Title) return;
+        if (!events[key]) events[key] = [];
+        events[key].push({ title: r.Title, type: type });
       });
     }
 
     function render() {
       document.getElementById("month-label").textContent = monthNames[month] + " " + year;
-
       const body = document.getElementById("calendar-body");
       body.innerHTML = "";
 
@@ -122,20 +85,18 @@
             td.className = "empty";
           } else {
             const key = year + "-" + pad(month + 1) + "-" + pad(day);
-            const s = schoolEvents[key];
-            const f = funEvents[key];
-            td.textContent = day;
+            const num = document.createElement("div");
+            num.className = "day-num";
+            num.textContent = day;
+            td.appendChild(num);
 
-            if (s && f) {
-              td.classList.add("has-both");
-              td.title = "School: " + s.join(", ") + "\nFun: " + f.join(", ");
-            } else if (s) {
-              td.classList.add("has-school");
-              td.title = "School: " + s.join(", ");
-            } else if (f) {
-              td.classList.add("has-fun");
-              td.title = "Fun: " + f.join(", ");
-            }
+            (events[key] || []).forEach(function (e) {
+              const chip = document.createElement("div");
+              chip.className = "chip " + e.type;
+              chip.textContent = e.title;
+              chip.title = e.title;
+              td.appendChild(chip);
+            });
 
             if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
               td.classList.add("today");
@@ -146,31 +107,63 @@
         }
         body.appendChild(tr);
       }
+
+      const list = document.getElementById("event-list");
+      list.innerHTML = "";
+      const prefix = year + "-" + pad(month + 1);
+      const keys = Object.keys(events).filter(function (k) { return k.startsWith(prefix); }).sort();
+      if (keys.length === 0) {
+        list.innerHTML = "<li>No events this month.</li>";
+      } else {
+        keys.forEach(function (k) {
+          events[k].forEach(function (e) {
+            const li = document.createElement("li");
+            li.textContent = monthNames[month] + " " + parseInt(k.slice(8), 10) + ": " + e.title + " (" + e.type + ")";
+            list.appendChild(li);
+          });
+        });
+      }
+    }
+
+    function renderNews(rows) {
+      const box = document.getElementById("news-list");
+      box.innerHTML = "";
+      if (rows === null) { box.textContent = "Could not load the headlines."; return; }
+      if (rows.length === 0) { box.textContent = "No headlines yet."; return; }
+
+      rows.sort(function (a, b) { return normalizeDate(b.Date).localeCompare(normalizeDate(a.Date)); });
+      rows.forEach(function (r) {
+        const card = document.createElement("div");
+        card.className = "card";
+        const h = document.createElement("h3");
+        h.textContent = r.Title || "";
+        const d = document.createElement("p");
+        const em = document.createElement("em");
+        const iso = normalizeDate(r.Date || "");
+        em.textContent = iso ? prettyDate(iso) : (r.Date || "");
+        d.appendChild(em);
+        const t = document.createElement("p");
+        t.textContent = r.Text || "";
+        card.appendChild(h); card.appendChild(d); card.appendChild(t);
+        box.appendChild(card);
+      });
     }
 
     document.getElementById("prev").onclick = function () {
-      month--;
-      if (month < 0) { month = 11; year--; }
+      month--; if (month < 0) { month = 11; year--; }
       render();
     };
     document.getElementById("next").onclick = function () {
-      month++;
-      if (month > 11) { month = 0; year++; }
+      month++; if (month > 11) { month = 0; year++; }
       render();
     };
 
-    render();
-    Promise.all([loadSheet("school.csv"), loadSheet("fun.csv")])
-      .then(function (results) {
-        addRows(schoolEvents, results[0]);
-        addRows(funEvents, results[1]);
-      })
-      .catch(function () { loadError = true; })
-      .then(function () {
-        renderUpcoming("school-list", schoolEvents);
-        renderUpcoming("fun-list", funEvents);
-        render();
-      });
+    Promise.all([loadCSV("school"), loadCSV("fun"), loadCSV("news")]).then(function (res) {
+      addEvents(res[0], "school");
+      addEvents(res[1], "fun");
+      render();
+      renderNews(res[2]);
+    });
   </script>
 
 </body>
