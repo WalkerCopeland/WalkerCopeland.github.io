@@ -16,10 +16,11 @@ document.getElementById("site-header").innerHTML = `
     <p class="tagline">Welcome to all things Walker</p>
         <nav>
       <a href="about.html">About</a>
-      <a href="calendar.html">Calendar</a>
       <a href="news.html">News</a>
+      <a href="calendar.html">Calendar</a>
       <a href="ideas.html">Ideas</a>
       <a href="links.html">Links</a>
+      <a href="resume.html">Resume</a>
     </nav>
   </header>
 `;

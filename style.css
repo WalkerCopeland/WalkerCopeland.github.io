@@ -442,3 +442,223 @@ footer {
     margin-right: auto;
   }
 }
+
+/* Resume page */
+.resume-hero {
+  padding: 24px 0 8px;
+}
+
+.resume-name {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -1px;
+  margin: 0 0 12px;
+}
+
+.resume-name::after {
+  content: "";
+  display: block;
+  width: 70px;
+  height: 5px;
+  margin-top: 16px;
+  border-radius: 3px;
+  background: #1e3a8a;
+}
+
+.resume-summary {
+  font-size: 1.25rem;
+  font-style: italic;
+  color: #333;
+  margin: 0 0 20px;
+}
+
+.resume-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+button.button {
+  border: 0;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button.button.secondary {
+  border: 2px solid #1e3a8a;
+}
+
+.resume-section {
+  margin-top: 40px;
+}
+
+.resume-section > h3,
+.resume-section h3 {
+  font-size: 1.5rem;
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.15);
+}
+
+.chips {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chips li {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 0.95rem;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 28px;
+  border-left: 3px solid #1e3a8a;
+}
+
+.job {
+  position: relative;
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.job::before {
+  content: "";
+  position: absolute;
+  left: -40px;
+  top: 24px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1e3a8a;
+  border: 3px solid #ffffff;
+}
+
+.job-when {
+  flex: 0 0 150px;
+  font-weight: bold;
+  color: #1e3a8a;
+}
+
+.job-body {
+  flex: 1;
+}
+
+.job-body h4 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.job-org {
+  margin: 2px 0 8px;
+  color: #555;
+  font-style: italic;
+}
+
+.job-body ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.job-body li {
+  margin-bottom: 4px;
+}
+
+.resume-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.resume-grid .card {
+  margin: 0;
+}
+
+.resume-grid .card h4 {
+  margin: 0 0 4px;
+}
+
+.resume-grid .card p {
+  margin: 0 0 6px;
+}
+
+.muted {
+  color: #555;
+  font-style: italic;
+}
+
+/* Scroll animation (only when JavaScript is on) */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.js .reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .resume-name {
+    font-size: 2.6rem;
+  }
+
+  .job {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .job-when {
+    flex: none;
+  }
+}
+
+/* Clean printout / Save as PDF */
+@media print {
+  body {
+    background: #ffffff;
+    padding: 0;
+  }
+
+  #site-header,
+  .resume-actions,
+  footer {
+    display: none;
+  }
+
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .job,
+  .card,
+  .chips li {
+    box-shadow: none;
+    background: #ffffff;
+    break-inside: avoid;
+  }
+}
